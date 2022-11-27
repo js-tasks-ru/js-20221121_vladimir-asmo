@@ -5,5 +5,8 @@
  * @returns {object} - returns the new object
  */
 export const omit = (obj, ...fields) => {
-
+  const intersectProps = fields.filter((prop) => Object.hasOwn(obj, prop));
+  return Object.fromEntries(
+    Object.entries(obj).filter(([prop]) => !intersectProps.includes(prop))
+  );
 };
