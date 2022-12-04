@@ -3,5 +3,9 @@
  * @param {string} path - the strings path separated by dot
  * @returns {function} - function-getter which allow get value from object by set path
  */
-export const createGetter = (path) => (target) =>
-  path.split('.').reduce((root, currentLeaf) => root?.[currentLeaf], target);
+export const createGetter = (path) => {
+  const paths = path.split('.');
+
+  return (target) =>
+    paths.reduce((root, currentLeaf) => root?.[currentLeaf], target);
+};
