@@ -11,6 +11,11 @@ export default class ColumnChart {
     });
   }
 
+  element = {};
+  #subElements = {};
+
+  chartHeight = 50;
+
   constructor({
     label = '',
     value = 0,
@@ -19,18 +24,17 @@ export default class ColumnChart {
     formatHeading = (data) => data,
   } = {}) {
     this.props = { label, value, data, link, formatHeading };
-    this.chartHeight = 50;
-    this.rootRef = null;
+
     this.render();
+    this.getSubElements();
   }
 
-  set element(value) {
-    this._el = value;
-  }
+  getSubElements() {
+    const elements = this.element.querySelectorAll('[data-element]');
 
-  get element() {
-    this.rootRef = this._el.parentNode;
-    return this._el;
+    for (const el of elements) {
+      this.#subElements[el.dataset.element] = el;
+    }
   }
 
   render() {
@@ -41,13 +45,14 @@ export default class ColumnChart {
 
   update(props) {
     this.props = { ...this.props, ...props };
-    this.replace();
-  }
 
-  replace() {
-    this.remove();
-    this.render();
-    this.rootRef.append(this.element);
+    if (!!props.data?.length) {
+      this.#subElements.body.innerHTML = this.getChartItems();
+    }
+
+    if (!!props.value) {
+      this.#subElements.header.innerHTML = this.getChartHeader();
+    }
   }
 
   remove() {
@@ -56,13 +61,12 @@ export default class ColumnChart {
 
   destroy() {
     this.remove();
-    this.rootRef = null;
   }
 
   getTemplate() {
     return `
       <div class="dashboard__chart_${this.props.label}
-        ${!this.isDataLoaded() ? 'column-chart_loading' : ''}">
+        ${!this.isDataLoading() ? 'column-chart_loading' : ''}">
         <div class="column-chart"
           style="--chart-height: ${this.chartHeight}">
           <div class="column-chart__title">
@@ -82,7 +86,7 @@ export default class ColumnChart {
     `;
   }
 
-  isDataLoaded() {
+  isDataLoading() {
     return !!this.props.data.length;
   }
 
