@@ -24,16 +24,6 @@ export default class ColumnChart {
     this.render();
   }
 
-  static getChartType(type) {
-    const CHART_TYPE = {
-      orders: 'orders',
-      sales: 'sales',
-      customers: 'customers',
-      default: 'orders',
-    };
-    return CHART_TYPE[type] ?? CHART_TYPE.default;
-  }
-
   set element(value) {
     this._el = value;
   }
@@ -71,8 +61,8 @@ export default class ColumnChart {
 
   getTemplate() {
     return `
-      <div class="dashboard__chart_${ColumnChart.getChartType(this.props.label)}
-            ${!this.isDataLoaded() ? 'column-chart_loading' : ''}">
+      <div class="dashboard__chart_${this.props.label}
+        ${!this.isDataLoaded() ? 'column-chart_loading' : ''}">
         <div class="column-chart"
           style="--chart-height: ${this.chartHeight}">
           <div class="column-chart__title">
