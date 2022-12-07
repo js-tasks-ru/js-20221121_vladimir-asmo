@@ -1,4 +1,16 @@
 export default class ColumnChart {
+  static getColumnProps(data, chartHeight) {
+    const maxValue = Math.max(...data);
+    const scale = chartHeight / maxValue;
+
+    return data.map((item) => {
+      return {
+        percent: ((item / maxValue) * 100).toFixed(0) + '%',
+        value: String(Math.floor(item * scale)),
+      };
+    });
+  }
+
   constructor({
     label = '',
     value = 0,
@@ -10,18 +22,6 @@ export default class ColumnChart {
     this.chartHeight = 50;
     this.rootRef = null;
     this.render();
-  }
-
-  static getColumnProps(data) {
-    const maxValue = Math.max(...data);
-    const scale = 50 / maxValue;
-
-    return data.map((item) => {
-      return {
-        percent: ((item / maxValue) * 100).toFixed(0) + '%',
-        value: String(Math.floor(item * scale)),
-      };
-    });
   }
 
   static getChartType(type) {
@@ -115,7 +115,7 @@ export default class ColumnChart {
   }
 
   getChartItems() {
-    return ColumnChart.getColumnProps(this.props.data)
+    return ColumnChart.getColumnProps(this.props.data, this.chartHeight)
       .map(
         (it) =>
           `<div style="--value: ${it.value}" data-tooltip="${it.percent}"></div>`
