@@ -70,7 +70,9 @@ export default class ColumnChart {
             ${this.getLink()}
           </div>
           <div class="column-chart__container">
-            ${this.getChartHeader()}
+            <div data-element="header" class="column-chart__header">
+              ${this.getChartHeader()}
+            </div>
             <div data-element="body" class="column-chart__chart">
               ${this.getChartItems()}
             </div>
@@ -97,11 +99,7 @@ export default class ColumnChart {
   }
 
   getChartHeader() {
-    return `
-      <div data-element="header" class="column-chart__header">
-        ${this.props.formatHeading(this.props.value)}
-      </div>
-    `;
+    return this.props.formatHeading(this.props.value);
   }
 
   getChartItems() {
