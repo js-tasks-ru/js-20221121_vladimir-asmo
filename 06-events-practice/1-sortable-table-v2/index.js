@@ -1,11 +1,11 @@
 import { createGetter } from '../../03-objects-arrays-intro-to-testing/1-create-getter/index.js';
 
-const SORT_ORDER = {
-  asc: 'asc',
-  desc: 'desc',
-};
-
 export default class SortableTable {
+  SORT_ORDER = {
+    asc: 'asc',
+    desc: 'desc',
+  };
+
   element = null;
   subElements = {};
 
@@ -99,7 +99,7 @@ export default class SortableTable {
   }
 
   toggleSortOrder() {
-    const { asc, desc } = SORT_ORDER;
+    const { asc, desc } = this.SORT_ORDER;
     this.sorted.order = this.sorted.order === asc ? desc : asc;
   }
 
@@ -174,6 +174,7 @@ export default class SortableTable {
 
   sortOnClient() {
     const { sorted, headers } = this;
+
     const comparator = {
       string: (current, next) =>
         current.localeCompare(next, ['ru', 'en'], { caseFirst: 'upper' }),
