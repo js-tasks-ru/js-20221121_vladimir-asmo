@@ -1,7 +1,7 @@
 class Tooltip {
   static instance = null;
 
-  static debounce = (fn, delay = 16) => {
+  static throttle = (fn, delay = 16) => {
     let timerId = null;
 
     return (...args) => {
@@ -36,7 +36,7 @@ class Tooltip {
     this.addListeners();
     Tooltip.instance = this;
 
-    this.onPointerMove = Tooltip.debounce(this.onPointerMove);
+    this.onPointerMove = Tooltip.throttle(this.onPointerMove);
   }
 
   get template() {
