@@ -80,13 +80,13 @@ export default class SortableTable {
 
   onHeaderClick = (evt) => {
     const { id, sortable } = evt.target.closest('[data-id]').dataset;
-    const isColumnNotSortable = sortable === 'false';
+    const isNotSortable = sortable === 'false';
 
-    if (isColumnNotSortable) {
+    if (isNotSortable) {
       return;
     }
 
-    if (this.isSameFieldClicked(id)) {
+    if (this.isSameField(id)) {
       this.toggleSortOrder();
     }
 
@@ -96,7 +96,7 @@ export default class SortableTable {
     this.update();
   };
 
-  isSameFieldClicked(fieldId) {
+  isSameField(fieldId) {
     return this.sorted.id === fieldId;
   }
 
@@ -127,14 +127,15 @@ export default class SortableTable {
 
   get tableHeader() {
     const mapConfigToDomString = ({ id, title, sortable }) => `
-    <div class="sortable-table__cell"
-      data-id="${id}"
-      data-sortable="${sortable}"
-      ${this.isSameFieldClicked(id) ? `data-order=${this.sorted.order}` : ''}>
-      <span>${title}</span>
-      ${this.isSameFieldClicked(id) ? `${this.arrow}` : ''}
-    </div>
-  `;
+      <div class="sortable-table__cell"
+        data-id="${id}"
+        data-sortable="${sortable}"
+        ${this.isSameField(id) ? `data-order=${this.sorted.order}` : ''}>
+        <span>${title}</span>
+        ${this.isSameField(id) ? `${this.arrow}` : ''}
+      </div>
+    `;
+
     return this.headers.map(mapConfigToDomString).join('');
   }
 
