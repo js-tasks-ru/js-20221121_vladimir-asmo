@@ -70,8 +70,10 @@ export default class SortableTable {
   }
 
   destroy() {
-    this.removeListeners();
-    this.remove();
+    if (this.element) {
+      this.removeListeners();
+      this.remove();
+    }
     this.element = null;
     this.subElements = {};
   }
@@ -124,11 +126,30 @@ export default class SortableTable {
   }
 
   get tableHeader() {
-    return this.headers.map(this.mapConfigToDomString).join('');
+    const mapConfigToDomString = ({ id, title, sortable }) => `
+    <div class="sortable-table__cell"
+      data-id="${id}"
+      data-sortable="${sortable}"
+      ${this.isSameFieldClicked(id) ? `data-order=${this.sorted.order}` : ''}>
+      <span>${title}</span>
+      ${this.isSameFieldClicked(id) ? `${this.arrow}` : ''}
+    </div>
+  `;
+    return this.headers.map(mapConfigToDomString).join('');
   }
 
   get tableBody() {
-    return this.products.map(this.mapProductToDomString).join('');
+    const mapProductToDomString = (product) => `
+      <a href="/products/${product.id}" class="sortable-table__row">
+        ${this.headers.map(formatProduct(product)).join('')}
+      </a>
+    `;
+
+    const formatProduct = (product) => (field) =>
+      field.template?.(product) ??
+      `<div class="sortable-table__cell">${product[field.id]}</div>`;
+
+    return this.products.map(mapProductToDomString).join('');
   }
 
   get arrow() {
@@ -138,27 +159,6 @@ export default class SortableTable {
       </span>
     `;
   }
-
-  mapConfigToDomString = ({ id, title, sortable }) => `
-    <div class="sortable-table__cell"
-      data-id="${id}"
-      data-sortable="${sortable}"
-      ${this.isSameFieldClicked(id) ? `data-order=${this.sorted.order}` : ''}>
-      <span>${title}</span>
-      ${this.isSameFieldClicked(id) ? `${this.arrow}` : ''}
-    </div>
-  `;
-
-  mapProductToDomString = (product) =>
-    `
-    <a href="/products/${product.id}" class="sortable-table__row">
-      ${this.headers.map(this.formatProduct(product)).join('')}
-    </a>
-  `;
-
-  formatProduct = (product) => (field) =>
-    field.template?.(product) ??
-    `<div class="sortable-table__cell">${product[field.id]}</div>`;
 
   sort() {
     if (this.sorted.isLocally) {
