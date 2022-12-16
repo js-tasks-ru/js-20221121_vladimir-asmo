@@ -20,7 +20,7 @@ class Tooltip {
   GAP = 15;
   UNIT = 'px';
   cursor = { x: 0, y: 0 };
-  client = { width: 0, height: 0 };
+  viewport = { width: 0, height: 0 };
   tooltip = { width: 0, height: 0 };
   isHidden = false;
   content = '';
@@ -95,20 +95,20 @@ class Tooltip {
   };
 
   updatePosition() {
-    const { tooltip, cursor, client, GAP, UNIT } = this;
+    const { tooltip, cursor, viewport, GAP, UNIT } = this;
 
     const isTooltipIntersectRight = () =>
-      tooltip.width + cursor.x + GAP >= client.width;
+      tooltip.width + cursor.x + GAP >= viewport.width;
 
     const isTooltipIntersectBottom = () =>
-      tooltip.height + cursor.y + GAP >= client.height;
+      tooltip.height + cursor.y + GAP >= viewport.height;
 
     const left = isTooltipIntersectRight()
-      ? client.width - tooltip.width
+      ? viewport.width - tooltip.width
       : cursor.x + GAP;
 
     const top = isTooltipIntersectBottom()
-      ? client.width - tooltip.width
+      ? viewport.width - tooltip.width
       : cursor.y + GAP;
 
     this.element.style.left = left + UNIT;
@@ -131,7 +131,7 @@ class Tooltip {
 
   getPageSize = () => {
     const { clientWidth, clientHeight } = document.documentElement;
-    this.client = { width: clientWidth, height: clientHeight };
+    this.viewport = { width: clientWidth, height: clientHeight };
   };
 
   getTooltipSize = () => {
