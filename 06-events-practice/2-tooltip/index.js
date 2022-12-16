@@ -17,13 +17,27 @@ class Tooltip {
   };
 
   element = null;
-  GAP = 15;
-  UNIT = 'px';
-  cursor = { x: 0, y: 0 };
   viewport = { width: 0, height: 0 };
   tooltip = { width: 0, height: 0 };
-  isHidden = false;
-  content = '';
+
+  onPointerOver = ({ target }) => {
+    const element = target.closest('[data-tooltip]');
+
+    if (!element) {
+      document.removeEventListener('pointermove', this.onPointerMove);
+      this.hide();
+      return;
+    }
+
+    this.render(element.dataset.tooltip);
+    this.getTooltipSize();
+
+    document.addEventListener('pointermove', this.onPointerMove);
+  };
+
+  onPointerMove = ({ clientX, clientY }) => {
+    this.updatePosition({ x: clientX, y: clientY });
+  };
 
   constructor() {
     if (Tooltip.instance) {
@@ -41,18 +55,12 @@ class Tooltip {
 
   get template() {
     return `
-      <div class="tooltip">${this.content}</div>
+      <div class="tooltip"></div>
     `;
   }
 
   initialize(target = document.body) {
     target.append(this.element);
-  }
-
-  render(content = '') {
-    this.content = content;
-    this.updateText();
-    this.show();
   }
 
   renderTemplate() {
@@ -72,30 +80,28 @@ class Tooltip {
     window.removeEventListener('resize', this.getPageSize);
   }
 
-  onPointerOver = ({ target }) => {
-    this.content = target.dataset.tooltip;
-
-    if (!this.content) {
-      document.removeEventListener('pointermove', this.onPointerMove);
-      this.hide();
-
-      return;
+  remove() {
+    if (this.element) {
+      this.element.remove();
     }
+  }
 
+  destroy() {
+    this.removeListeners();
+    this.remove();
+    this.element = null;
+    Tooltip.instance = null;
+  }
+
+  render(text = '') {
+    this.updateText(text);
     this.show();
-    this.updateText();
-    this.getTooltipSize();
+  }
 
-    document.addEventListener('pointermove', this.onPointerMove);
-  };
-
-  onPointerMove = ({ clientX, clientY }) => {
-    this.cursor = { x: clientX, y: clientY };
-    this.updatePosition();
-  };
-
-  updatePosition() {
-    const { tooltip, cursor, viewport, GAP, UNIT } = this;
+  updatePosition(cursor) {
+    const GAP = 15;
+    const UNIT = 'px';
+    const { tooltip, viewport } = this;
 
     const isTooltipIntersectRight = () =>
       tooltip.width + cursor.x + GAP >= viewport.width;
@@ -115,17 +121,15 @@ class Tooltip {
     this.element.style.top = top + UNIT;
   }
 
-  updateText() {
-    this.element.textContent = this.content;
+  updateText(text = '') {
+    this.element.textContent = text;
   }
 
   show() {
-    this.isHidden = false;
     this.element.hidden = false;
   }
 
   hide() {
-    this.isHidden = true;
     this.element.hidden = true;
   }
 
@@ -138,19 +142,6 @@ class Tooltip {
     const { width, height } = this.element.getBoundingClientRect();
     this.tooltip = { width, height };
   };
-
-  remove() {
-    if (this.element) {
-      this.element.remove();
-    }
-  }
-
-  destroy() {
-    this.removeListeners();
-    this.remove();
-    this.element = null;
-    Tooltip.instance = null;
-  }
 }
 
 export default Tooltip;
