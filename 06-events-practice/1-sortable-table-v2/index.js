@@ -70,10 +70,7 @@ export default class SortableTable {
   }
 
   destroy() {
-    if (this.element) {
-      this.removeListeners();
-      this.remove();
-    }
+    this.remove();
     this.element = null;
     this.subElements = {};
   }
