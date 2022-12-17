@@ -26,6 +26,46 @@ export default class DoubleSlider {
     percent: { from: 0, to: 0 },
   };
 
+  onPointerDown = ({ target }) => {
+    this.target = target.dataset.element;
+
+    this.slider = this.subElements.slider.getBoundingClientRect();
+
+    document.addEventListener('pointerup', this.onPointerUp);
+    document.addEventListener('pointermove', this.onPointerMove);
+  };
+
+  onPointerUp = () => {
+    document.removeEventListener('pointerup', this.onPointerUp);
+    document.removeEventListener('pointermove', this.onPointerMove);
+
+    this.target = '';
+    this.update();
+    this.dispatchRangeSelectEvent();
+  };
+
+  onPointerMove = ({ clientX }) => {
+    const { HANDLE, target, slider } = this;
+    const isTargetNotHandle = target !== HANDLE.left && target !== HANDLE.right;
+
+    if (isTargetNotHandle) {
+      return;
+    }
+
+    const { from, to } = this.selectedPercent;
+
+    const getX = () => (100 / slider.width) * (clientX - slider.left);
+    const limit = (value, max, min = 0) => Math.max(min, Math.min(value, max));
+
+    const [min, max] = target === HANDLE.left ? [0, to] : [from, 100];
+
+    this.selectedPercent = {
+      [target]: limit(getX(), max, min),
+    };
+
+    this.update();
+  };
+
   constructor({
     min = 0,
     max = 100,
@@ -129,53 +169,20 @@ export default class DoubleSlider {
     document.removeEventListener('pointermove', this.onPointerMove);
   }
 
-  onPointerDown = ({ target }) => {
-    this.target = target.dataset.element;
-
-    this.slider = this.subElements.slider.getBoundingClientRect();
-
-    document.addEventListener('pointerup', this.onPointerUp);
-    document.addEventListener('pointermove', this.onPointerMove);
-  };
-
-  onPointerUp = () => {
-    document.removeEventListener('pointerup', this.onPointerUp);
-    document.removeEventListener('pointermove', this.onPointerMove);
-
-    this.target = '';
-    this.update();
-    this.dispatchRangeSelectEvent();
-  };
-
-  dispatchRangeSelectEvent() {
-    this.element.dispatchEvent(
-      new CustomEvent('range-select', {
-        detail: { ...this.selected.value },
-      })
-    );
+  remove() {
+    if (this.element) {
+      this.element.remove();
+    }
   }
 
-  onPointerMove = ({ clientX }) => {
-    const { HANDLE, target, slider } = this;
-    const isTargetHandle = target === HANDLE.left || target === HANDLE.right;
-
-    if (!isTargetHandle) {
-      return;
+  destroy() {
+    if (this.element) {
+      this.removeListeners();
+      this.remove();
     }
-
-    const { from, to } = this.selectedPercent;
-
-    const getX = () => (100 / slider.width) * (clientX - slider.left);
-    const limit = (value, max, min = 0) => Math.max(min, Math.min(value, max));
-
-    const [min, max] = target === HANDLE.left ? [0, to] : [from, 100];
-
-    this.selectedPercent = {
-      [target]: limit(getX(), max, min),
-    };
-
-    this.update();
-  };
+    this.element = null;
+    this.subElements = {};
+  }
 
   update() {
     const { selectedPercent, selectedValue, formatValue } = this;
@@ -196,18 +203,11 @@ export default class DoubleSlider {
     this.subElements.to.textContent = formatValue(selectedValue.to);
   }
 
-  remove() {
-    if (this.element) {
-      this.element.remove();
-    }
-  }
-
-  destroy() {
-    if (this.element) {
-      this.removeListeners();
-      this.remove();
-    }
-    this.element = null;
-    this.subElements = {};
+  dispatchRangeSelectEvent() {
+    this.element.dispatchEvent(
+      new CustomEvent('range-select', {
+        detail: { ...this.selectedValue },
+      })
+    );
   }
 }
