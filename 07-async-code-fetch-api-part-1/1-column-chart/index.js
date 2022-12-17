@@ -15,10 +15,15 @@ export default class ColumnChart {
     });
   }
 
-  element = {};
-  #subElements = {};
-
+  LOADER_NAME = 'column-chart_loading';
   chartHeight = 50;
+  element = null;
+  subElements = {};
+  data = [];
+  value = 0;
+  controller = new AbortController();
+
+  // todo: add abortController
 
   constructor({
     url = 'api/dashboard/orders',
@@ -27,22 +32,21 @@ export default class ColumnChart {
       to: new Date(),
     },
     label = '',
-    value = 0,
-    data = [],
     link = '',
     formatHeading = (data) => data,
   } = {}) {
-    this.props = { label, value, data, link, formatHeading, url, range };
+    this.props = { label, link, formatHeading, url };
 
     this.render();
     this.getSubElements();
+    this.update(range.from, range.to);
   }
 
   getSubElements() {
     const elements = this.element.querySelectorAll('[data-element]');
 
     for (const el of elements) {
-      this.#subElements[el.dataset.element] = el;
+      this.subElements[el.dataset.element] = el;
     }
   }
 
@@ -52,16 +56,14 @@ export default class ColumnChart {
     this.element = wrapper.firstElementChild;
   }
 
-  update(props) {
-    this.props = { ...this.props, ...props };
+  update(from, to) {
+    const url = this.getUrl(this.props.url, { params: { from, to } });
 
-    if (!!props.data?.length) {
-      this.#subElements.body.innerHTML = this.getChartItems();
-    }
-
-    if (!!props.value) {
-      this.#subElements.header.innerHTML = this.getChartHeader();
-    }
+    return fetchJson(url, { signal: this.controller.signal }).then((data) => {
+      this.updateData(data);
+      this.updateView();
+      return data;
+    });
   }
 
   remove() {
@@ -69,13 +71,43 @@ export default class ColumnChart {
   }
 
   destroy() {
+    this.controller.abort();
     this.remove();
+  }
+
+  getUrl(pathname, { base = BACKEND_URL, params = {} }) {
+    const url = new URL(pathname, base);
+
+    Object.keys(params).forEach((key) => {
+      url.searchParams.append(key, params[key]);
+    });
+
+    return url;
+  }
+
+  updateData(data) {
+    this.data = data;
+    const getTotal = (total, current) => total + current;
+    this.value = Object.values(data).reduce(getTotal);
+  }
+
+  updateView() {
+    this.subElements.body.innerHTML = this.getChartItems();
+    this.subElements.header.innerHTML = this.getChartHeader();
+    this.toggleLoader(false);
+  }
+
+  toggleLoader(isLoading = true) {
+    if (isLoading) {
+      this.element.classList.add(this.LOADER_NAME);
+      return;
+    }
+    this.element.classList.remove(this.LOADER_NAME);
   }
 
   getTemplate() {
     return `
-      <div class="dashboard__chart_${this.props.label}
-        ${!this.isDataLoading() ? 'column-chart_loading' : ''}">
+      <div class="dashboard__chart_${this.props.label} ${this.LOADER_NAME}">
         <div class="column-chart"
           style="--chart-height: ${this.chartHeight}">
           <div class="column-chart__title">
@@ -95,10 +127,6 @@ export default class ColumnChart {
     `;
   }
 
-  isDataLoading() {
-    return !!this.props.data.length;
-  }
-
   getTitle() {
     return `Total ${this.props.label}`;
   }
@@ -114,11 +142,14 @@ export default class ColumnChart {
   }
 
   getChartHeader() {
-    return this.props.formatHeading(this.props.value);
+    return this.props.formatHeading(this.value);
   }
 
   getChartItems() {
-    return ColumnChart.getColumnProps(this.props.data, this.chartHeight)
+    return ColumnChart.getColumnProps(
+      Object.values(this.data),
+      this.chartHeight
+    )
       .map(
         (it) =>
           `<div style="--value: ${it.value}" data-tooltip="${it.percent}"></div>`
