@@ -18,7 +18,7 @@ export default class SortableTable {
 
     this.sorted = {
       id: sorted.id || this.headers.find((item) => item.sortable).id,
-      order: sorted.order || SORT_ORDER.asc,
+      order: sorted.order || this.SORT_ORDER.asc,
       compareFn: sorted.compareFn,
       isLocally: isSortedLocally,
     };
