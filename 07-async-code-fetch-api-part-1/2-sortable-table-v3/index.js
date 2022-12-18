@@ -12,13 +12,38 @@ export default class SortableTable {
     loading: 'sortable-table_loading',
     placeholder: 'sortable-table_empty',
   };
+  CHANK_SIZE = 30;
 
   element = null;
   subElements = {};
   headerRefs = {};
   controller = new AbortController();
-
   products = [];
+  currentChank = 1;
+  lastProductObserver = null;
+
+  onLastProductInViewport = ([entry], observer) => {
+    if (entry.isIntersecting) {
+      observer.unobserve(entry.target);
+
+      this.loadData().then((data) => {
+        const chank = this.sorted.isLocally
+          ? this.sortOnClient(null, null, data)
+          : data;
+
+        this.products = [
+          ...this.products,
+          ...chank,
+        ];
+
+        this.currentChank = this.currentChank + 1;
+
+        this.update();
+
+        observer.observe(this.subElements.body.lastElementChild);
+      });
+    }
+  };
 
   onHeaderClick = (evt) => {
     const { id, sortable } = evt.target.closest('[data-id]').dataset;
@@ -66,7 +91,25 @@ export default class SortableTable {
       isLocally: isSortLocally,
     };
 
-    this.render();
+    this.render().then((_) => {
+      if (IntersectionObserver) {
+        this.turnOnLazyLoading();
+      }
+    });
+  }
+
+  turnOnLazyLoading() {
+    if (!this.lastProductObserver) {
+      this.lastProductObserver = new IntersectionObserver(
+        this.onLastProductInViewport,
+        {
+          rootMargin: '0px 0px 300px',
+          threshold: 1,
+        }
+      );
+    }
+
+    this.lastProductObserver.observe(this.subElements.body.lastElementChild);
   }
 
   render() {
@@ -100,10 +143,16 @@ export default class SortableTable {
   }
 
   sortOnServer(id = this.sorted.id, order = this.sorted.order) {
+    this.currentChank = 0;
+    this.products = [];
     return this.loadData().then(this.onDataLoaded);
   }
 
-  sortOnClient(id = this.sorted.id, order = this.sorted.order) {
+  sortOnClient(
+    id = this.sorted.id,
+    order = this.sorted.order,
+    products = this.products
+  ) {
     const comparator = {
       string: (current, next) =>
         current.localeCompare(next, ['ru', 'en'], { caseFirst: 'upper' }),
@@ -111,26 +160,28 @@ export default class SortableTable {
       custom: this.sorted.compareFn,
     };
 
-    const byId = (header) => header.id === id;
+    const byId = (header) => header.id === this.sorted.id;
     const compareFn =
       comparator.custom || comparator[this.headers.find(byId).sortType];
 
-    this.sortProducts(compareFn);
+    this.sortProducts(compareFn, products);
   }
 
-  sortProducts(compareFn) {
-    const { sorted, products } = this;
+  sortProducts(compareFn, items = this.products) {
+    const { sorted } = this;
     const direction = { asc: 1, desc: -1 };
     const getId = createGetter(sorted.id);
 
-    products.sort(
+    items.sort(
       (product, nextProduct) =>
         direction[sorted.order] * compareFn(getId(product), getId(nextProduct))
     );
   }
 
-  loadData() {
-    const params = { _start: 0, _end: 30 };
+  loadData(start, end) {
+    const params = {};
+    params._start = start || this.CHANK_SIZE * this.currentChank;
+    params._end = end || this.CHANK_SIZE * (this.currentChank + 1);
     if (!this.sorted.isLocally) {
       params._sort = this.sorted.id;
       params._order = this.sorted.order;
@@ -262,6 +313,7 @@ export default class SortableTable {
       </span>
     `;
   }
+
   getSubElements(
     selector = '[data-element]',
     { target = this.element, propNamePattern = 'element' } = {}
@@ -294,9 +346,13 @@ export default class SortableTable {
   }
 
   destroy() {
+    if (this.lastProductObserver) {
+      this.lastProductObserver.disconnect();
+    }
     this.controller.abort();
     this.remove();
     this.element = null;
     this.subElements = {};
+    this.headerRefs = {};
   }
 }
