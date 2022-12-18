@@ -144,7 +144,7 @@ export default class SortableTable {
     `;
 
     const formatProduct = (product) => (field) =>
-      field.template?.(product) ??
+      field.template?.(product[field.id]) ??
       `<div class="sortable-table__cell">${product[field.id]}</div>`;
 
     return this.products.map(mapProductToDomString).join('');
