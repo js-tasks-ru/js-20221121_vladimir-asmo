@@ -11,7 +11,7 @@ export default class SortableTable {
   static mapProductToDomString = (config) => (product) =>
     `
     <a href="/products/${product.id}" class="sortable-table__row">
-      ${config.map(SortableTable.formatProduct(product))}
+      ${config.map(SortableTable.formatProduct(product)).join('')}
     </a>
   `;
 
